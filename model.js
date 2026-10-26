@@ -19,7 +19,7 @@ export function fresh(records){
    nodes.push({...node('l'+(++count),units.get(source.unit),source.title,'lecture'),source});
   }
  }
- return {schemaVersion:VERSION,nodes,plans:[],tests:[],sessions:[],settings:{milestone:'2027-05-31',dailyMinutes:150,theme:'light'},updatedAt:new Date().toISOString()};
+ return {schemaVersion:VERSION,nodes,plans:[],tests:[],sessions:[],settings:{milestone:'2027-05-31',dailyMinutes:150,theme:'light',weekAnchor:weekStart(today())},updatedAt:new Date().toISOString()};
 }
 export function node(id,parentId,title,kind='custom'){return {id,parentId,title,kind,done:false,description:'',relevance:'',notes:'',links:[],source:null};}
 export function validate(s){
@@ -38,5 +38,20 @@ export function validate(s){
  for(const t of s.tests)if(!str(t.title,1000)||!str(t.subject,1000)||!str(t.notes,50000)||!Number.isFinite(t.max)||t.max<=0||!Number.isFinite(t.score)||t.score>t.max||t.score < -t.max)fail('Invalid test marks.');
  for(const t of s.sessions)if(!str(t.title,1000)||!Number.isFinite(t.minutes)||t.minutes<1||t.minutes>1440)fail('Invalid study log.');
  if(!s.settings||!validDate(s.settings.milestone)||!Number.isFinite(s.settings.dailyMinutes)||s.settings.dailyMinutes<30||s.settings.dailyMinutes>1440||!['light','dark'].includes(s.settings.theme))fail('Invalid settings.');
+ if(s.settings.weekAnchor!==undefined&&(!validDate(s.settings.weekAnchor)||weekStart(s.settings.weekAnchor)!==s.settings.weekAnchor))fail('Week 1 must start on a Monday.');normalizeCompletion(s.nodes);
  if(new TextEncoder().encode(JSON.stringify(s)).length>800000)fail('Backup exceeds 800 KB. Export/archive older notes or logs first.');return s;
 }
+export function setCompletion(nodes,id,done){
+ const n=nodes.find(n=>n.id===id);if(!n)throw new Error('Topic not found.');
+ if(done&&descendants(nodes,id).slice(1).some(child=>!nodes.find(n=>n.id===child).done))throw new Error('Complete all subtopics first, then mark this topic complete.');
+ n.done=done;if(!done)for(const p of pathOf(nodes,id).slice(0,-1))p.done=false;
+}
+export function normalizeCompletion(nodes){
+ // Preserve completed leaves; invalidate only ancestors with an unfinished descendant.
+ const byId=new Map(nodes.map(n=>[n.id,n]));
+ for(const n of nodes)if(!n.done){let p=byId.get(n.parentId);while(p){p.done=false;p=byId.get(p.parentId);}}
+ return nodes;
+}
+export function addDays(date,n){if(!validDate(date)||!Number.isInteger(n))throw new Error('Invalid date offset.');return new Date(Date.parse(date)+n*86400000).toISOString().slice(0,10);}
+export function weekStart(date){if(!validDate(date))throw new Error('Invalid week date.');const day=new Date(date+'T00:00:00Z').getUTCDay();return addDays(date,-((day+6)%7));}
+export function weekNumber(anchor,date){return 1+Math.round((Date.parse(weekStart(date))-Date.parse(weekStart(anchor)))/604800000);}

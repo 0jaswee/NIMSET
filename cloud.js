@@ -30,7 +30,7 @@ export class CloudSync {
   if(this.isDirty()||this.isEditing()){this.conflict(data);return;}
   this.rev=data.revision;this.apply(JSON.parse(data.payload));this.status('Synced · '+new Date().toLocaleTimeString());
  }
- conflict(data){this.remote=data;this.blocked=true;this.status('Conflict · choose a version in Settings');}
+ conflict(data){this.remote=data;this.blocked=true;this.status('Conflict · choose a version in Account');}
  async push(){
   if(!this.user||!this.ready||this.blocked||this.saving||!this.isDirty())return;
   if(!navigator.onLine){this.status('Offline · saved locally, cloud pending');return;}

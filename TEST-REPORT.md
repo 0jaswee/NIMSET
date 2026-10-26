@@ -1,30 +1,49 @@
-# Verification report
+# Compact weekly edition — verification report
 
-Prepared: 26 October 2026. This report distinguishes automated verification from real browser or live Firebase verification.
+Prepared: 26 October 2026. The report distinguishes automated checks from real browser and live Firebase checks.
 
-## Passed
+## Passed: 42 automated tests
 
-- 28 dependency-free Node tests: curriculum counts and preservation; recursive paths, independent completion and aggregated progress; deep search across notes/dates/links; recursive deletion and detached planner links; full JSON round trips; rejection of malformed/cyclic/oversized backups and unsafe URL protocols; deterministic IST date/countdown; cloud transaction success, failed writes, concurrent revision conflicts, explicit resolution, snapshots during save, new edits during save, unresolved conflicts and remote deletion.
-- App-event/DOM harness (part of those 28 tests): Home rendering and honest local status; search result direct links; custom parent/child creation and independent completion; notes escaping and resource links; planner add/edit/complete; test marks and actual study logs; preference/theme updates; JSON export/import; module reload persistence; unconfigured Google sign-in guidance. This is a small simulated DOM, **not a real browser layout engine**.
-- JavaScript syntax checks for all shipped JS modules.
-- 389 supplied lecture records: Mathematics 202, Reasoning 55, Computer 66, English Grammar 26, Quantitative Aptitude 40. Baseline has 438 nodes: 389 lectures + 44 distinct printed units + 5 subjects. Unit capitalization variants remain separate to preserve source hierarchy.
-- Independent PDF reconciliation: faculty-name occurrences from a second PDF text extractor matched the extracted lecture counts on every one of the 18 pages. SHA-256 hashes of the 5 source PDFs were verified in the earlier extraction audit. Original PDFs are excluded from the English ZIP. Per-page counts are in `tests/source-verification.json` and `source-audit.json`.
-- Original Mathematics page 1 was rendered and visually inspected; the 10-Dec-2026 title overflowing its cell was recovered and annotated. Table extraction was used for all scheduled rows; empty timetable dates are not lectures. Repeated titles/dates/slots are not deduplicated. Mathematics page 3 is the `[1] Recorded` footnote, preserved on the referenced lecture.
-- Static relative HTML/module references, PWA manifest scope/start URL checked; source references retain original filename/page without linking to packaged PDFs. ZIP content and hashes verified after packaging.
+26 model/sync tests cover:
 
-## Not verified in this environment
+- All 389 lecture records, subject counts and source preservation; full JSON round trips and legacy imports; unsafe URLs, malformed data, duplicate IDs, cycles, orphans and oversized state rejection.
+- Recursive paths, search across levels, notes, dates and links; subtree deletion and preservation of planner tasks as detached tasks.
+- Completion guards at any depth. An unfinished descendant blocks parent completion; unchecking/adding an unfinished child invalidates ancestors. Legacy inconsistent parent ticks are cleared without changing completed leaves or notes.
+- Monday-based week boundaries, Sunday, year rollover, leap day, configurable week numbering and optional week anchor in old backups.
+- IST date/countdown; teacher metadata removal; English built-in text and study guidance.
+- Mocked cloud transactions and snapshots: initial seed, successful acknowledgment, failed writes, stale revision conflicts, explicit resolution, editing conflicts, snapshots during save, further changes during save, unresolved conflicts and remote document deletion.
 
-- A local HTTP preview server was attempted, but local socket access was forbidden and the in-app browser timed out. **Real Chromium/Safari rendering, mobile viewport layouts, touch/keyboard behavior, popup behavior, PWA install/offline reload and accessibility have not been browser-verified.** CSS includes mobile breakpoints, wrapping, visible focus, native form labels, dialog and reduced-motion support, but this is not a substitute for real-device QA.
-- No user Firebase project, credentials or Google accounts were supplied. Real Google sign-in, production Firestore rules enforcement, quota behavior and live two-device sync have **not** been integration-tested. Cloud logic was tested with mocked transactions/snapshots. Rules were statically reviewed, not exercised in the Firebase emulator. Follow the Hindi guide's two-device acceptance test before depending on cloud backups.
-- External YouTube/Drive resources are user-provided links; availability and Drive sharing permissions are outside this app. Original timetable PDFs are not shipped in this edition.
-- The provisional 31-May-2027 milestone is a user-adjustable planning date, not an official exam date. Study guidance is editorial and does not claim verified chapter frequencies or admission outcomes.
+16 app-event/DOM harness tests cover:
 
-## Run tests yourself
+- Header with Home/search/theme only; global search from Home with direct topic links; distinct Home, Subjects, Planner, Results and Account screens.
+- One hierarchy level per screen, clickable path and Back; More beside a child without navigation; Add Subtopic beside its section heading.
+- Inline topic creation, direct content editing, Save/Cancel and keyboard save; unsaved-edit navigation guard. No details popup.
+- Parent checkbox behavior; notes isolation between topics, markup escaping and local persistence.
+- Multiple inline resource links, unsafe-link rejection, inline copy-link fallback.
+- Weekly task add/edit, grouping by actual task dates, week changes, completion, invalid-minute rejection, date jumps and backlog. Add/Edit stays inside the appropriate day.
+- Results test marks/actual study logs without duplicating the subject library.
+- Account preferences, old #settings alias, JSON backup/import, module reload, stable IDs/storage keys and honest unconfigured sign-in status.
 
-With Node installed, run `npm test` in the extracted folder (no npm install required). No Node/build is needed for GitHub Pages publishing.
+The DOM harness simulates elements/events; it is **not a real browser layout engine**. It does not establish pixel-perfect layout, keyboard selection behavior, actual scrolling or touch ergonomics.
 
-Before relying on the app: open it on your phone, add a subtopic + note + two links, reload, export/import a backup, and complete the Google/Firestore two-device test in START-HERE-HI.html. Keep weekly JSON backups. Whole-tracker sync conflicts require explicitly choosing a version; automatic field merging is not provided.
+## Additional checks
 
-## English edition changes
+- Syntax-checked all shipped JavaScript modules.
+- All relative HTML and module references and service-worker shell paths resolve inside the package. The new cache identifier is `abhyas-shell-v3-compact-weekly`.
+- Compared source-records.json against the prior English ZIP: all 389 titles, hierarchy fields and source references remain identical. The baseline remains 438 nodes (389 lectures, 44 printed units, 5 subjects).
+- The earlier source extraction audit reconciled all 18 original PDF pages with a second text extractor and verified source-file SHA-256 hashes. Original timetable PDFs are omitted from this package, and teacher names are removed from curriculum data. Formatting whitespace was normalized during extraction. One overflowing Mathematics title was recovered and annotated in the original record.
+- Archive content, CRC and per-file integrity hashes verified after packaging. The shipped Firebase configuration is intentionally null; a user-configured Firebase file will have a different hash.
 
-All built-in interface text, notifications, default planner tasks and generated study guidance are English. The separate setup guide stays Hindi. Teacher names have been removed from source-records.json and from search/detail views. Legacy backup import strips the old faculty field while retaining notes, links, completion and IDs. Automated checks scan app files for remaining Devanagari and curriculum data for teacher metadata; the 389 topic titles and hierarchy remain unchanged. Service-worker cache version is updated.
+## Not verified here
+
+- The earlier local browser preview failed because local socket access was forbidden and the in-app browser timed out. Real Chromium/Safari mobile rendering, text-cursor placement, touch navigation, scrolling, accessibility, PWA installation and offline reload have not been browser-verified for this edition. CSS is responsive and markup has labels, focus styles, native controls and accessible tab states, but real-device review is still needed.
+- No user Firebase project or Google account was provided. Real sign-in, published Firestore rules, quota behavior and live two-device sync are not integration-tested. Rules are statically reviewed, not emulator-tested. Cloud tests use mocked transactions/snapshots. Follow the Hindi setup guide before relying on sync.
+- External YouTube/Drive links and sharing permissions depend on those services. File uploads are not supported. Cloud SDK loading/sign-in/sync require network access; offline shell support does not make external services available offline.
+
+## Update and acceptance test
+
+Read UPDATE-HI.html. Export JSON first, preserve your configured firebase-config.js, and replace app files in the same repository. Do not clear browser storage, change the site URL or delete the Firebase project/database. Schema version and storage keys remain unchanged. Old dated tasks are grouped into weeks without moving their dates.
+
+On your phone: search from Home; open a subject and child; use More and edit text; save/cancel; add a subtopic beside its heading; confirm an unfinished child blocks its parent; add/edit tasks in Weeks 1/2/3; reload and confirm persistence; export/import JSON. Then complete the same-account two-device Firebase test from START-HERE-HI.html. Keep weekly JSON backups.
+
+With Node installed, run `npm test` (no npm install). Publishing requires no build or Node.
