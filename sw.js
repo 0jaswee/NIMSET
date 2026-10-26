@@ -1,4 +1,4 @@
-const CACHE='abhyas-shell-v4-linked-topic-search';
+const CACHE='abhyas-shell-v5-editable-goals';
 const SHELL=['./','./index.html','./styles.css','./app.js','./model.js','./guidance.js','./cloud.js','./firebase-config.js','./source-records.json','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./START-HERE-HI.html','./UPDATE-HI.html'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('abhyas-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
