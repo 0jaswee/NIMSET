@@ -1,0 +1,109 @@
+[
+  {
+    "file": "Lecture Planner  _ English Grammar.pdf",
+    "sha256": "8344a259f4672ba36c00997ce198d6a2be882f0f7c6e3590ac6c7a8e198da8a1",
+    "pages": [
+      {
+        "page": 1,
+        "lectures": 11
+      },
+      {
+        "page": 2,
+        "lectures": 12
+      },
+      {
+        "page": 3,
+        "lectures": 3
+      }
+    ],
+    "lectures": 26
+  },
+  {
+    "file": "Lecture Planner _ Computer.pdf",
+    "sha256": "4b297b498af05482cc22e4e3c4f921069f191f5cf52a45a9ca1ed9d2c6324dd7",
+    "pages": [
+      {
+        "page": 1,
+        "lectures": 13
+      },
+      {
+        "page": 2,
+        "lectures": 17
+      },
+      {
+        "page": 3,
+        "lectures": 15
+      },
+      {
+        "page": 4,
+        "lectures": 15
+      },
+      {
+        "page": 5,
+        "lectures": 6
+      }
+    ],
+    "lectures": 66
+  },
+  {
+    "file": "Lecture Planner _ Mathematics.pdf",
+    "sha256": "4a9a9a3157468d9846f1417c6af0615fa9548b91e0914e61838a5c161aa95c55",
+    "pages": [
+      {
+        "page": 1,
+        "lectures": 119
+      },
+      {
+        "page": 2,
+        "lectures": 83
+      },
+      {
+        "page": 3,
+        "lectures": 0
+      }
+    ],
+    "lectures": 202
+  },
+  {
+    "file": "Lecture Planner _ Quantitative Aptitude.pdf",
+    "sha256": "1bd73a9f4c527b535e0393a05e86fa02c8de1cf910832b0e2a86913afe7a2159",
+    "pages": [
+      {
+        "page": 1,
+        "lectures": 8
+      },
+      {
+        "page": 2,
+        "lectures": 10
+      },
+      {
+        "page": 3,
+        "lectures": 6
+      },
+      {
+        "page": 4,
+        "lectures": 10
+      },
+      {
+        "page": 5,
+        "lectures": 6
+      }
+    ],
+    "lectures": 40
+  },
+  {
+    "file": "Lecture Planner _ Reasoning.pdf",
+    "sha256": "a066d65b964d60157b8b8422e8ea0cf1bcb0fee780d6ae283c00d8a1ad3b31d7",
+    "pages": [
+      {
+        "page": 1,
+        "lectures": 39
+      },
+      {
+        "page": 2,
+        "lectures": 16
+      }
+    ],
+    "lectures": 55
+  }
+]
