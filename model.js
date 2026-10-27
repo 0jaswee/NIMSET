@@ -1,3 +1,4 @@
+import {validateRich,richText} from './rich-notes.js';
 export const VERSION=1;
 export const uid=()=>globalThis.crypto.randomUUID();
 export function today(d=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
@@ -24,12 +25,15 @@ export function fresh(records){
 export function node(id,parentId,title,kind='custom'){return {id,parentId,title,kind,done:false,description:'',relevance:'',notes:'',links:[],source:null};}
 export function validate(s){
  const fail=m=>{throw new Error(m);};
+ if(s?.syllabusId!==undefined&&!['nimcet','jilcce'].includes(s.syllabusId))fail('Unknown syllabus backup.');
  if(!s||s.schemaVersion!==VERSION)fail('Unsupported backup version.');
  if(!Array.isArray(s.nodes)||s.nodes.length>5000||!s.nodes.length)fail('Nodes must contain 1–5000 items.');
  const ids=new Set();const str=(v,max)=>typeof v==='string'&&v.length<=max;
  for(const n of s.nodes){if(!n||!str(n.id,100)||!/^[a-zA-Z0-9_-]+$/.test(n.id)||ids.has(n.id))fail('Invalid or duplicate node ID.');ids.add(n.id);
  if(!str(n.title,1000)||!n.title.trim()||!str(n.kind,30)||typeof n.done!=='boolean'||!['description','relevance','notes'].every(k=>str(n[k],50000)))fail('Invalid node fields.');
  if(!Array.isArray(n.links)||n.links.length>100||n.links.some(l=>!l||!str(l.label,300)||!str(l.url,3000)||!safeUrl(l.url)||!['youtube','resource'].includes(l.type)))fail('Invalid links.');
+ if(n.syllabusSource!==undefined&&(!n.syllabusSource||!str(n.syllabusSource.file,1000)||!str(n.syllabusSource.excerpt,20000)||!Number.isInteger(n.syllabusSource.page)||n.syllabusSource.page<1||n.syllabusSource.page>1000||!str(n.syllabusSource.extractionNote||'',5000)))fail('Invalid syllabus source.');
+ if(n.notesRich!==undefined){validateRich(n.notesRich);if(richText(n.notesRich)!==n.notes)fail('Rich and plain notes must match.');}
  if(n.source!==null&&(!n.source||!['subject','unit','title','time','date','dateOriginal','day','classSlot','file'].every(k=>str(n.source[k],1000))||!Number.isInteger(n.source.page)||n.source.page<1||!validDate(n.source.date)))fail('Invalid source metadata.');if(n.source)delete n.source.faculty;}
  for(const n of s.nodes){if(n.parentId!==null&&!ids.has(n.parentId))fail('Missing parent.');let p=n,seen=new Set();while(p){if(seen.has(p.id))fail('Cycle in hierarchy.');seen.add(p.id);if(seen.size>100)fail('Hierarchy exceeds 100 levels.');p=s.nodes.find(x=>x.id===p.parentId);}}
  for(const key of ['plans','tests','sessions'])if(!Array.isArray(s[key])||s[key].length>10000)fail('Invalid '+key);

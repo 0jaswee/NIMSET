@@ -1,25 +1,29 @@
 import {validate} from './model.js';
 // One private revisioned document. Transactions reject stale writes; never silently overwrite another device.
 export class CloudSync {
- constructor(hooks){Object.assign(this,hooks);this.rev=0;this.ready=false;this.saving=false;this.blocked=false;this.generation=0;}
+ constructor(hooks){Object.assign(this,hooks);this.rev=0;this.ready=false;this.saving=false;this.blocked=false;this.generation=0;this.documentId='main';}
  async init(config){
   const base='https://www.gstatic.com/firebasejs/13.1.0/';
   const [a,b,c]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);
   this.b=b;this.c=c;const app=a.initializeApp(config);this.auth=b.getAuth(app);this.db=c.getFirestore(app);
-  b.onAuthStateChanged(this.auth,async user=>{
-   const gen=++this.generation;this.unsub?.();this.ready=false;this.blocked=false;this.remote=null;this.latest=null;this.rev=0;
-   this.user=user;this.account(user);if(!user){this.status('Local only · Google sign-in needed');return;}
-   this.status('Connecting to private cloud…');this.ref=c.doc(this.db,'users',user.uid,'tracker','main');
+  b.onAuthStateChanged(this.auth,user=>{this.user=user;this.attach(user);});
+ }
+ selectDocument(id){if(!['main','jilcce',null].includes(id))throw new Error('Unknown tracker document.');if(this.saving)throw new Error('Wait for cloud save to finish.');this.documentId=id;this.attach(this.user||null);}
+ attach(user){
+   const c=this.c,gen=++this.generation;this.unsub?.();this.unsub=null;this.ready=false;this.blocked=false;this.remote=null;this.latest=null;this.rev=0;
+   this.user=user;this.account(user);if(!user){this.status('Sign in with Google to open your syllabuses');return;}
+   if(!this.documentId){this.status('Signed in · choose a syllabus');return;}
+   this.status('Connecting to private cloud…');this.ref=c.doc(this.db,'users',user.uid,'tracker',this.documentId);
    this.startListener=()=>c.onSnapshot(this.ref,{includeMetadataChanges:true},snap=>{
     if(gen!==this.generation||snap.metadata.hasPendingWrites||snap.metadata.fromCache)return;
     const data=snap.exists()?snap.data():{revision:0,payload:null};
     if(!Number.isInteger(data.revision)||data.revision<0){this.blocked=true;this.status('Cloud revision invalid · export local backup');return;}
-    try{if(data.payload)validate(JSON.parse(data.payload));}catch(e){this.blocked=true;this.status('Cloud data invalid · export local backup');return;}
+    try{if(data.payload){const parsed=validate(JSON.parse(data.payload));this.validateRemote?.(parsed);}}catch(e){this.blocked=true;this.status('Cloud data invalid · export local backup');return;}
     if(this.saving){this.latest=data;return;}this.receive(data);
    },e=>{if(gen===this.generation){this.ready=false;this.status('Cloud error: '+(e.code||e.message)+' · local saved');}});
    this.unsub=this.startListener();
-  });
  }
+
  receive(data){
   if(!this.ready){this.ready=true;const cached=this.cachedRevision();this.rev=data.revision;
    if(data.payload){if(this.isDirty()&&cached!==data.revision){this.conflict(data);return;}if(!this.isDirty()){if(this.isEditing()){this.conflict(data);return;}this.apply(JSON.parse(data.payload));}}else if(!this.isDirty()){this.forceDirty();}this.status(this.isDirty()?'Cloud connected · local changes pending':'Synced · cloud loaded');this.schedule();return;

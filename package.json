@@ -2,5 +2,7 @@
   "name": "nimcet-2027-study-tracker",
   "private": true,
   "type": "module",
-  "scripts": {"test": "node --test tests/*.test.mjs"}
+  "scripts": {
+    "test": "node --experimental-test-module-mocks --test tests/*.test.mjs"
+  }
 }
