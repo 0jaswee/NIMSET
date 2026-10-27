@@ -1,0 +1,16 @@
+REFRESH + DARK MODE FIX — r8
+
+1. Extract this ZIP.
+2. Upload/replace these FOUR files in the root of your existing GitHub NIMSET repository:
+   app.js, index.html, styles.css, sw.js
+3. Commit changes and wait for GitHub Pages deployment.
+4. Refresh the website once (Ctrl+Shift+R if old version appears).
+5. Open your syllabus and topic, select Dark Mode, then refresh to check.
+
+Firebase configuration, rules and saved study data do not need replacement.
+The same signed-in account resumes its selected syllabus and URL topic/planner on refresh.
+Signed-out visitors still need login. The device theme is loaded before CSS to avoid a light flash.
+Unsaved typed notes must still be saved before refreshing.
+
+Validation: 67 automated tests passed, including JILCCE topic refresh, NIMCET topic/data preservation,
+planner refresh and synchronous theme boot script. Native first-paint timing has not been measured on every device.

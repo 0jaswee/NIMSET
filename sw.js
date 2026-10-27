@@ -1,5 +1,5 @@
-const CACHE='abhyas-shell-v7-dual-syllabus-rich-notes';
-const SHELL=['./','./index.html','./styles.css','./app.js','./app.js?v=20261027-r7','./model.js','./profiles.js','./rich-notes.js','./jilcce-curriculum.json','./guidance.js','./cloud.js','./firebase-config.js','./source-records.json','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./START-HERE-HI.html','./UPDATE-HI.html'];
+const CACHE='abhyas-shell-v8-refresh-resume';
+const SHELL=['./','./index.html','./styles.css','./app.js','./app.js?v=20261027-r8','./model.js','./profiles.js','./rich-notes.js','./jilcce-curriculum.json','./guidance.js','./cloud.js','./firebase-config.js','./source-records.json','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./START-HERE-HI.html','./UPDATE-HI.html'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.map(path=>new Request(new URL(path,self.location.href),{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('abhyas-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==self.location.origin||url.pathname.includes('/source-pdfs/'))return;
