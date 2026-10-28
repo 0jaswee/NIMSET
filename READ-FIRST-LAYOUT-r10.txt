@@ -1,0 +1,30 @@
+ABHYAS / NIMSET r10 — केवल layout update
+
+यह छोटी PATCH ZIP है; पहले भेजी गई NIMSET r9 वाली पूरी ZIP के ऊपर लगाएँ। यह standalone पूरा app नहीं है।
+
+अपलोड:
+1. मौजूदा app से NIMCET और JILCCE का अलग-अलग निजी JSON backup सुरक्षित कर लें।
+2. ZIP Extract All करें। इसके अंदर app.js आदि सीधे root में हैं।
+3. GitHub में वही branch/folder खोलें जहाँ existing index.html है। Add file > Upload files में ZIP के अंदर की 5 app files और tests folder upload करके same-name files replace करें। ZIP या enclosing folder upload न करें। बाकी existing files delete न करें।
+4. Commit करें, Pages deployment होने दें, फिर site refresh करें। Account में Version r10 दिखेगा। जरूरत हो तो app tabs बंद करके दोबारा खोलें; browser storage clear न करें।
+5. Firebase में कोई नया बदलाव नहीं चाहिए।
+
+बदला क्या है:
+• Home और topic rows में छोटा Video icon और More icon। Row का Practice हटाया; Practice Quiz tab में मौजूद है।
+• More में Description / Notes & Links / Quiz पहले जैसे। Notes & Links के अंदर Study video button हटाया है।
+• Video icon से अलग पूरा video + notes screen: सबसे ऊपर video; नीचे एक horizontal bar जिसमें Back, −30 sec, Play/Pause, +30 sec, speed, video chooser और PDF हैं; उसके नीचे Notes/Save/Cancel और collapsible formatting। Close/× button नहीं है।
+• YouTube native controls=0, custom controls नीचे। YouTube branding, ads, loading/error overlays YouTube के नियंत्रण में हैं; इनके पूरी तरह छिपने का दावा नहीं है। Autoplay browser पर निर्भर है; जरूरत पर Play दबाएँ।
+• Keyboard पर available visual viewport में video ऊपर बना रहता है और notes का बाकी हिस्सा scroll होता है। पुराने scrolling layout की तरह keyboard पर video हटता नहीं है। बहुत कम landscape height में keyboard बंद करके पढ़ना अधिक उपयोगी हो सकता है।
+• Save/Cancel से video restart नहीं होता। Unsaved notes पर Back रोककर Save/Cancel करने को कहता है। Original playback minutes, quizzes, progress, marks, source curriculum और cloud/storage paths बदले नहीं हैं।
+
+जाँच:
+71 automated tests passed. दोनों syllabuses में browser checks passed: icons, tabs, video seek/speed/chooser/play-pause, notes Save/Cancel और unsaved-exit guard, automatic minutes। 320px और 390px चौड़ाई तथा keyboard के लिए घटाए गए 380/400px available viewport में video और notes visible रहे। Browser tests में Firebase और YouTube mocked थे; actual YouTube media, production Firebase और physical Android/iOS keyboard end-to-end जाँचे नहीं गए हैं।
+
+ZIP में केवल 6 बदली हुई files और यह guide है। यह r9 के पुराने integrity manifests को regenerate नहीं करता; नीचे r10 files के नए SHA-256 दिए हैं। नए hashes को पुराने r9 manifests से compare न करें।
+
+b402cf0fa6086937251ff48158be2b5d07ea6df8e8796e587dda275ebaa11a97  app.js
+5c955cbe441ddb605b2cac1254562452ca7da6f33190bf6944ca448fe80326dc  video-player.js
+acc8d7bf5bc56f4c8dc1ff40f07fd28339ff2408594d3cdfbfb2a79fce58367b  styles.css
+2d8e569465a415f1f787c96294bb45fe2c89d0ab15625b62aee1226bd93a8874  index.html
+76ed95fd186a2a2c40e9d72ef515eff9a0a55d21aae7f063b3ade1bef122ebc4  sw.js
+aefe4fcef8336a4f9bdae587b9d9403f3c8241f76cc5ce908b5d0f9286f9dbc2  tests/app-flow.test.mjs
