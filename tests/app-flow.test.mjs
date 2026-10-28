@@ -15,7 +15,7 @@ function parse(html){for(const m of html.matchAll(/<([a-z0-9-]+)\b([^>]*\sid="([
 parse(read('index.html'));for(const id of elements.keys())staticIds.add(id);
 const main=elements.get('main'),storage=new Map(),handlers={},downloads=[];let formValues={};
 const has=id=>staticIds.has(id)||main.innerHTML.includes(`id="${id}"`)||elements.get('dialog-body')?.innerHTML.includes(`id="${id}"`);
-globalThis.document={querySelector:s=>s.startsWith('#')&&has(s.slice(1))?elements.get(s.slice(1)):null,querySelectorAll:()=>[],documentElement:{lang:'en'},body:{classList:{toggle(){}}},createElement:()=>({click(){downloads.push(this.href);}})};
+globalThis.document={querySelector:s=>s.startsWith('#')&&has(s.slice(1))?elements.get(s.slice(1)):null,querySelectorAll:()=>[],documentElement:{lang:'en',classList:{toggle(){},contains(){return false;}}},body:{classList:{toggle(){}}},createElement:()=>({click(){downloads.push(this.href);}})};
 globalThis.window={addEventListener:(e,f)=>handlers[e]=f,scrollTo(){},matchMedia:()=>({matches:false})};
 globalThis.location={hash:'#home',href:'https://example.org/my-repo/'};
 globalThis.history={replaceState:(a,b,hash)=>location.hash=hash};
@@ -59,7 +59,19 @@ test('choosing a searched topic closes the dropdown and saves it; No linked topi
 test('Home goal pencil edits main and backup goals inline and persists them without a popup',async()=>{route('home');assert(main.innerHTML.includes('aria-label="Edit your goals"'));await act('edit-goals');assert(main.innerHTML.includes('Edit your goals'));assert(!elements.get('editor').open);await submit({goalMain:'NIT Jamshedpur MCA',goalBackup:'BIT Mesra MCA'});assert.equal(state().settings.goalMain,'NIT Jamshedpur MCA');assert.equal(state().settings.goalBackup,'BIT Mesra MCA');assert(main.innerHTML.includes('NIT Jamshedpur MCA'));await import('../app.js?goals-reload');await act('choose-syllabus',{syllabus:'nimcet'});route('home');assert(main.innerHTML.includes('NIT Jamshedpur MCA'));});
 test('goal editing supports Cancel, rejects an empty main goal, and permits no backup',async()=>{await act('edit-goals');input('f-goalMain','Discard this goal');await act('cancel-inline');assert.equal(state().settings.goalMain,'NIT Jamshedpur MCA');await act('edit-goals');await submit({goalMain:'',goalBackup:''});assert(elements.get('inline-error').textContent.includes('main goal'));await submit({goalMain:'NIT Jamshedpur',goalBackup:''});assert.equal(state().settings.goalBackup,'');assert(!main.innerHTML.includes('backup aspiration'));});
 
-test('r7 has a visible Edit goals control and Account version marker',async()=>{route('home');assert(main.innerHTML.includes('✎ Edit'));route('account');assert(main.innerHTML.includes('Version r7'));});
-test('entry point and service worker use matching versioned app URLs and refreshed caching',()=>{const index=read('index.html'),sw=read('sw.js'),app=read('app.js');assert(index.includes('./app.js?v=20261027-r7'));assert(sw.includes('./app.js?v=20261027-r7'));assert(sw.includes("cache:'no-store'"));assert(app.includes("updateViaCache:'none'"));});
+test('r7 has a visible Edit goals control and Account version marker',async()=>{route('home');assert(main.innerHTML.includes('✎ Edit'));route('account');assert(main.innerHTML.includes('Version r9'));});
+test('entry point and service worker use matching versioned app URLs and refreshed caching',()=>{const index=read('index.html'),sw=read('sw.js'),app=read('app.js');assert(index.includes('./app.js?v=20261028-r9'));assert(sw.includes('./app.js?v=20261028-r9'));assert(sw.includes("cache:'no-store'"));assert(app.includes("updateViaCache:'none'"));});
 
 test('switching syllabuses preserves old NIMCET notes, goals and IDs, with isolated JILCCE state',async()=>{const before=structuredClone(state());elements.get('switch-syllabus').onclick();assert(main.innerHTML.includes('What will you study?'));await act('choose-syllabus',{syllabus:'jilcce'});assert.equal(fakeCloud.documentId,'jilcce');const jkey='abhyas-v1-jilcce-user-test-user';route('node/j0');await act('more',{id:'j0'});await act('topic-tab',{tab:'notes'});input('inline-notes','JILCCE का निजी note');await act('save-notes',{id:'j0'});assert.equal(JSON.parse(storage.get(jkey)).state.syllabusId,'jilcce');assert.equal(JSON.parse(storage.get(jkey)).state.nodes[0].notes,'JILCCE का निजी note');elements.get('switch-syllabus').onclick();await act('choose-syllabus',{syllabus:'nimcet'});assert.equal(fakeCloud.documentId,'main');assert.deepEqual(state(),before);});
+
+test('quiz CRUD, answer feedback, results and empty practice work in both syllabuses',async()=>{
+ for(const [syllabus,id,key] of [['nimcet','l1','abhyas-v1-user-test-user'],['jilcce','j0','abhyas-v1-jilcce-user-test-user']]){
+  if(syllabus==='jilcce'){elements.get('switch-syllabus').onclick();await act('choose-syllabus',{syllabus});}
+  route('node/'+id);await act('more',{id});await act('topic-tab',{tab:'quiz'});assert(main.innerHTML.includes('+ Question'));
+  await act('quiz-add',{id});await modalSave({question:'Capital?',option0:'Delhi',option1:'Patna',option2:'Ranchi',option3:'Mumbai',correct:'0',solution:'Delhi is correct.'});
+  const saved=()=>JSON.parse(storage.get(key)).state;const q=saved().nodes.find(n=>n.id===id).quizzes[0];assert.equal(q.correct,0);
+  await act('quiz-edit',{id,quiz:q.id});await modalSave({question:'Updated capital?',option0:'Delhi',option1:'Patna',option2:'Ranchi',option3:'Mumbai',correct:'0',solution:'Updated solution.'});
+  await act('practice',{id});assert(main.innerHTML.includes('Updated capital?'));await act('practice-answer',{answer:'1'});assert(main.innerHTML.includes('Incorrect.'));assert(main.innerHTML.includes('Updated solution.'));await act('practice-next');assert(main.innerHTML.includes('0 / 1 correct'));await act('practice-close');
+  await act('quiz-delete',{id,quiz:q.id});assert.equal(saved().nodes.find(n=>n.id===id).quizzes.length,0);await act('practice',{id});assert(main.innerHTML.includes('No quiz available'));await act('practice-close');
+ }
+});

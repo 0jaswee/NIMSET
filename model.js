@@ -1,3 +1,4 @@
+import {validateQuiz} from './study.js';
 import {validateRich,richText} from './rich-notes.js';
 export const VERSION=1;
 export const uid=()=>globalThis.crypto.randomUUID();
@@ -33,6 +34,7 @@ export function validate(s){
  if(!str(n.title,1000)||!n.title.trim()||!str(n.kind,30)||typeof n.done!=='boolean'||!['description','relevance','notes'].every(k=>str(n[k],50000)))fail('Invalid node fields.');
  if(!Array.isArray(n.links)||n.links.length>100||n.links.some(l=>!l||!str(l.label,300)||!str(l.url,3000)||!safeUrl(l.url)||!['youtube','resource'].includes(l.type)))fail('Invalid links.');
  if(n.syllabusSource!==undefined&&(!n.syllabusSource||!str(n.syllabusSource.file,1000)||!str(n.syllabusSource.excerpt,20000)||!Number.isInteger(n.syllabusSource.page)||n.syllabusSource.page<1||n.syllabusSource.page>1000||!str(n.syllabusSource.extractionNote||'',5000)))fail('Invalid syllabus source.');
+ if(n.quizzes!==undefined){if(!Array.isArray(n.quizzes)||n.quizzes.length>500)fail('Too many quiz questions.');const quizIds=new Set();for(const q of n.quizzes){validateQuiz(q);if(quizIds.has(q.id))fail('Duplicate quiz ID.');quizIds.add(q.id);}}
  if(n.notesRich!==undefined){validateRich(n.notesRich);if(richText(n.notesRich)!==n.notes)fail('Rich and plain notes must match.');}
  if(n.source!==null&&(!n.source||!['subject','unit','title','time','date','dateOriginal','day','classSlot','file'].every(k=>str(n.source[k],1000))||!Number.isInteger(n.source.page)||n.source.page<1||!validDate(n.source.date)))fail('Invalid source metadata.');if(n.source)delete n.source.faculty;}
  for(const n of s.nodes){if(n.parentId!==null&&!ids.has(n.parentId))fail('Missing parent.');let p=n,seen=new Set();while(p){if(seen.has(p.id))fail('Cycle in hierarchy.');seen.add(p.id);if(seen.size>100)fail('Hierarchy exceeds 100 levels.');p=s.nodes.find(x=>x.id===p.parentId);}}
@@ -40,7 +42,7 @@ export function validate(s){
  const itemIds=new Set();for(const key of ['plans','tests','sessions'])for(const x of s[key]){if(!x||!str(x.id,100)||itemIds.has(x.id)||!validDate(x.date))fail('Invalid record ID/date.');itemIds.add(x.id);}
  for(const p of s.plans)if(!str(p.title,1000)||!p.title.trim()||!Number.isFinite(p.minutes)||p.minutes<1||p.minutes>1440||typeof p.done!=='boolean'||(p.nodeId!==null&&!ids.has(p.nodeId)))fail('Invalid planner item.');
  for(const t of s.tests)if(!str(t.title,1000)||!str(t.subject,1000)||!str(t.notes,50000)||!Number.isFinite(t.max)||t.max<=0||!Number.isFinite(t.score)||t.score>t.max||t.score < -t.max)fail('Invalid test marks.');
- for(const t of s.sessions)if(!str(t.title,1000)||!Number.isFinite(t.minutes)||t.minutes<1||t.minutes>1440)fail('Invalid study log.');
+ for(const t of s.sessions)if(!str(t.title,1000)||!Number.isFinite(t.minutes)||t.minutes<(t.automaticVideo?0.000001:1)||t.minutes>1440)fail('Invalid study log.');
  if(!s.settings||!validDate(s.settings.milestone)||!Number.isFinite(s.settings.dailyMinutes)||s.settings.dailyMinutes<30||s.settings.dailyMinutes>1440||!['light','dark'].includes(s.settings.theme))fail('Invalid settings.');
  if(s.settings.weekAnchor!==undefined&&(!validDate(s.settings.weekAnchor)||weekStart(s.settings.weekAnchor)!==s.settings.weekAnchor))fail('Week 1 must start on a Monday.');normalizeCompletion(s.nodes);
  if(new TextEncoder().encode(JSON.stringify(s)).length>800000)fail('Backup exceeds 800 KB. Export/archive older notes or logs first.');return s;

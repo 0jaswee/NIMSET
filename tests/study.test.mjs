@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {node,validate,fresh} from '../model.js';
+import {practiceQuestions,completeWithTask,recordVideoSeconds,validateQuiz,youtubeId} from '../study.js';
+import {profileSeed} from '../profiles.js';
+import {plainRuns,richHTML,validateRich,readRichEditor} from '../rich-notes.js';
+import fs from 'node:fs';
+const read=f=>JSON.parse(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'));
+const records=read('source-records.json'),j=read('jilcce-curriculum.json');
+const quiz=id=>({id,question:'भारत की राजधानी?',options:['दिल्ली','मुंबई','पटना','राँची'],correct:0,solution:'दिल्ली सही है।'});
+test('recursive practice includes own and descendant questions only, shuffles without changing saved order',()=>{
+ const nodes=[node('a',null,'A'),node('b','a','B'),node('c','b','C'),node('d',null,'D')];nodes.forEach(n=>n.quizzes=[quiz(n.id)]);const before=structuredClone(nodes);
+ assert.deepEqual(new Set(practiceQuestions(nodes,'a',()=>0).map(q=>q.id)),new Set(['a','b','c']));assert.equal(practiceQuestions(nodes,'b').length,2);assert.equal(practiceQuestions(nodes,'c').length,1);assert.deepEqual(nodes,before);
+ nodes[2].quizzes=[];assert.equal(practiceQuestions(nodes,'c').length,0);
+});
+test('both syllabuses preserve quiz/notes/marks/progress through strict backup validation',()=>{for(const id of ['nimcet','jilcce']){const s=profileSeed(id,records,j),n=s.nodes.find(n=>!s.nodes.some(c=>c.parentId===n.id));n.quizzes=[quiz('q1')];n.done=true;n.notes='पुराना note';s.tests.push({id:'test',date:'2026-10-28',title:'Test',subject:'Maths',score:42,max:100,notes:'old marks'});const copy=validate(JSON.parse(JSON.stringify(s)));assert.deepEqual(copy,s);}});
+test('completion creates one daily task, reuses an existing task and retains historical work on uncheck',()=>{const s=fresh(records),n=s.nodes.find(n=>n.kind==='lecture');completeWithTask(s,n.id,true,'2026-10-28');completeWithTask(s,n.id,true,'2026-10-28');assert.equal(s.plans.length,1);assert.equal(s.plans[0].done,true);completeWithTask(s,n.id,false);assert.equal(s.plans[0].done,true);completeWithTask(s,n.id,true,'2026-10-29');assert.equal(s.plans.length,2);validate(s);});
+test('partial real playback minutes accumulate per topic and date without changing manual logs',()=>{const s=fresh(records),n=s.nodes[0];s.sessions.push({id:'manual',date:'2026-10-28',title:'Manual',minutes:20});recordVideoSeconds(s,n.id,10,'2026-10-28');recordVideoSeconds(s,n.id,20,'2026-10-28');recordVideoSeconds(s,n.id,5,'2026-10-29');assert.equal(s.sessions[1].minutes,.5);assert.equal(s.sessions[2].minutes,5/60);assert.equal(s.sessions[0].minutes,20);validate(s);assert.throws(()=>recordVideoSeconds(s,n.id,-1));});
+test('quiz malformed answers and duplicate IDs are rejected',()=>{assert.throws(()=>validateQuiz({...quiz('a'),correct:4}));assert.throws(()=>validateQuiz({...quiz('a'),options:['a']}));assert.throws(()=>validateQuiz({...quiz('a'),question:' '}));const s=fresh(records);s.nodes[0].quizzes=[quiz('same'),quiz('same')];assert.throws(()=>validate(s),/Duplicate/);});
+test('YouTube URL parsing accepts supported video forms and rejects deceptive hosts',()=>{for(const url of ['https://youtu.be/dQw4w9WgXcQ','https://www.youtube.com/watch?v=dQw4w9WgXcQ','https://youtube.com/shorts/dQw4w9WgXcQ'])assert.equal(youtubeId(url),'dQw4w9WgXcQ');assert.equal(youtubeId('https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ'),null);assert.equal(youtubeId('https://youtu.be/example'),null);});
+test('font sizes round-trip while legacy rich notes remain supported',()=>{validateRich(plainRuns('old'));const r={...plainRuns('बड़ा')[0],size:24};assert(richHTML([r]).includes('font-size:24px'));assert.throws(()=>validateRich([{...r,size:999}]));const runs=readRichEditor({childNodes:[{nodeType:1,tagName:'SPAN',style:{fontSize:'24px'},childNodes:[{nodeType:3,textContent:'बड़ा'}]}]});assert.equal(runs[0].size,24);});
